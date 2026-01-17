@@ -211,7 +211,9 @@ class Spyc {
     if (!$no_opening_dashes) $string = "---\n";
 
     // Start at the base of the array and move through it.
-    if ($array) {
+    // Note: We use !== null check to properly handle arrays containing zero values
+    // since `if ($array)` would incorrectly skip processing for falsey values like 0.
+    if ($array !== null && $array !== '' && (!is_array($array) || count($array) > 0)) {
       $array = (array)$array;
       $previous_key = -1;
       foreach ($array as $key => $value) {
@@ -234,7 +236,9 @@ class Spyc {
   private function _yamlize($key,$value,$indent, $previous_key = -1, $first_key = 0, $source_array = null) {
     if(is_object($value)) $value = (array)$value;
     if (is_array($value)) {
-      if (empty ($value))
+      // Note: We use explicit count check instead of empty() because empty(0) and empty("0")
+      // return true in PHP, which would incorrectly treat zero values as empty arrays.
+      if (count($value) === 0)
         return $this->_dumpNode($key, array(), $indent, $previous_key, $first_key, $source_array);
       // It has children.  What to do?
       // Make it the right kind of item
