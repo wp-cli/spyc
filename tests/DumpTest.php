@@ -193,4 +193,43 @@ class DumpTest extends PHPUnit_Framework_TestCase {
       $this->assertEquals ($awaiting, $dump);
     }
 
+    /**
+     * Test that integer zero values are correctly dumped.
+     * This is a regression test for the issue where empty(0) returns true in PHP,
+     * causing zero values to be incorrectly treated as empty.
+     */
+    public function testDumpIntegerZero() {
+      $dump = Spyc::YAMLDump(array(0));
+      $awaiting = "---\n- 0\n";
+      $this->assertEquals($awaiting, $dump);
+    }
+
+    /**
+     * Test that string zero values are correctly dumped.
+     * This is a regression test for the issue where empty("0") returns true in PHP.
+     */
+    public function testDumpStringZero() {
+      $dump = Spyc::YAMLDump(array('0'));
+      $awaiting = "---\n- \"0\"\n";
+      $this->assertEquals($awaiting, $dump);
+    }
+
+    /**
+     * Test that associative arrays with zero values are correctly dumped.
+     */
+    public function testDumpAssociativeZero() {
+      $dump = Spyc::YAMLDump(array('key' => 0));
+      $awaiting = "---\nkey: 0\n";
+      $this->assertEquals($awaiting, $dump);
+    }
+
+    /**
+     * Test that mixed arrays containing zero values are correctly dumped.
+     */
+    public function testDumpMixedWithZero() {
+      $dump = Spyc::YAMLDump(array(1, 0, 2));
+      $awaiting = "---\n- 1\n- 0\n- 2\n";
+      $this->assertEquals($awaiting, $dump);
+    }
+
 }
