@@ -211,8 +211,10 @@ class Spyc {
     if (!$no_opening_dashes) $string = "---\n";
 
     // Start at the base of the array and move through it.
-    // Note: We use !== null check to properly handle arrays containing zero values
-    // since `if ($array)` would incorrectly skip processing for falsey values like 0.
+    // Note: We use explicit checks instead of `if ($array)` to properly handle:
+    // - Scalar zero values passed directly (e.g., dump(0) or dump("0"))
+    // - Arrays containing zero values (e.g., dump([0]))
+    // PHP treats 0 and "0" as falsey, so a simple `if ($array)` would skip processing.
     if ($array !== null && $array !== '' && (!is_array($array) || count($array) > 0)) {
       $array = (array)$array;
       $previous_key = -1;
@@ -236,8 +238,10 @@ class Spyc {
   private function _yamlize($key,$value,$indent, $previous_key = -1, $first_key = 0, $source_array = null) {
     if(is_object($value)) $value = (array)$value;
     if (is_array($value)) {
-      // Note: We use explicit count check instead of empty() because empty(0) and empty("0")
-      // return true in PHP, which would incorrectly treat zero values as empty arrays.
+      // Note: We use count($value) === 0 instead of empty($value) for stylistic consistency
+      // with the fix in dump(). While functionally equivalent here (since $value is already
+      // verified to be an array), this makes the intent explicit and avoids any confusion
+      // with PHP's empty() behavior on zero values.
       if (count($value) === 0)
         return $this->_dumpNode($key, array(), $indent, $previous_key, $first_key, $source_array);
       // It has children.  What to do?
