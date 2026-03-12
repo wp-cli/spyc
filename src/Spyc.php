@@ -1063,10 +1063,25 @@ class Spyc {
         $key     = trim(array_shift($explode));
         $value   = trim(implode(': ', $explode));
         $this->checkKeysInValue($value);
+      // Other methods currently don't parse valid json maps or arrays of maps correctly
+        // The default inline parser (_toType) does not correctly handle complex JSON objects.
+        // Attempt to parse as JSON first for values that look like potential JSON.
+        $first_char = isset($value[0]) ? $value[0] : '';
+        if ($first_char === '{' || $first_char === '[') {
+          $decoded = json_decode($value, true);
+          // If the value is valid JSON, use the decoded array.
+          // This correctly handles valid JSON 'null' as well.
+          if (json_last_error() === JSON_ERROR_NONE) {
+            $value = $decoded;
+          }
+          // Otherwise, leave $value as a string for the legacy parser to handle.
+        }
       }
       // Set the type of the value.  Int, string, etc
-      $value = $this->_toType($value);
-      if ($key === '0') $key = '__!YAMLZero';
+      if ( ! is_array( $value ) ) {
+        $value = $this->_toType($value);
+        if ($key === '0') $key = '__!YAMLZero';
+      }
       $array[$key] = $value;
     } else {
       $array = array ($line);
