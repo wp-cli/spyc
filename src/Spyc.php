@@ -211,7 +211,11 @@ class Spyc {
     if (!$no_opening_dashes) $string = "---\n";
 
     // Start at the base of the array and move through it.
-    if ($array) {
+    // Note: We avoid a loose `if ($array)` check because it would treat falsey scalars
+    // (e.g., 0, "0", false) as empty input and skip dumping them, even though they are
+    // valid values. Non-empty arrays are always truthy in PHP regardless of contents,
+    // so this guard is about distinguishing "no data" (null, "", empty array) from real values.
+    if ($array !== null && $array !== '' && (!is_array($array) || count($array) > 0)) {
       $array = (array)$array;
       $previous_key = -1;
       foreach ($array as $key => $value) {
@@ -234,7 +238,9 @@ class Spyc {
   private function _yamlize($key,$value,$indent, $previous_key = -1, $first_key = 0, $source_array = null) {
     if(is_object($value)) $value = (array)$value;
     if (is_array($value)) {
-      if (empty ($value))
+      // Since $value is already an array, empty($value) and count($value) === 0 are equivalent.
+      // We use count($value) === 0 here for explicitness and consistency with the logic in dump().
+      if (count($value) === 0)
         return $this->_dumpNode($key, array(), $indent, $previous_key, $first_key, $source_array);
       // It has children.  What to do?
       // Make it the right kind of item
