@@ -238,10 +238,8 @@ class Spyc {
   private function _yamlize($key,$value,$indent, $previous_key = -1, $first_key = 0, $source_array = null) {
     if(is_object($value)) $value = (array)$value;
     if (is_array($value)) {
-      // Note: We use count($value) === 0 instead of empty($value) for stylistic consistency
-      // with the fix in dump(). While functionally equivalent here (since $value is already
-      // verified to be an array), this makes the intent explicit and avoids any confusion
-      // with PHP's empty() behavior on zero values.
+      // Since $value is already an array, empty($value) and count($value) === 0 are equivalent.
+      // We use count($value) === 0 here for explicitness and consistency with the logic in dump().
       if (count($value) === 0)
         return $this->_dumpNode($key, array(), $indent, $previous_key, $first_key, $source_array);
       // It has children.  What to do?
