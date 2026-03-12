@@ -211,10 +211,10 @@ class Spyc {
     if (!$no_opening_dashes) $string = "---\n";
 
     // Start at the base of the array and move through it.
-    // Note: We use explicit checks instead of `if ($array)` to properly handle:
-    // - Scalar zero values passed directly (e.g., dump(0) or dump("0"))
-    // - Arrays containing zero values (e.g., dump([0]))
-    // PHP treats 0 and "0" as falsey, so a simple `if ($array)` would skip processing.
+    // Note: We avoid a loose `if ($array)` check because it would treat falsey scalars
+    // (e.g., 0, "0", false) as empty input and skip dumping them, even though they are
+    // valid values. Non-empty arrays are always truthy in PHP regardless of contents,
+    // so this guard is about distinguishing "no data" (null, "", empty array) from real values.
     if ($array !== null && $array !== '' && (!is_array($array) || count($array) > 0)) {
       $array = (array)$array;
       $previous_key = -1;
