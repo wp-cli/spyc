@@ -218,7 +218,7 @@ class Spyc {
     if ($array !== null && $array !== '' && (!is_array($array) || count($array) > 0)) {
       $array = (array)$array;
       $previous_key = -1;
-      $is_sequence = self::isSequence($array);
+      $is_sequence = self::isList($array);
       foreach ($array as $key => $value) {
         if (!isset($first_key)) $first_key = $key;
         $string .= $this->_yamlize($key,$value,0,$previous_key, $first_key, $array, $is_sequence);
@@ -268,7 +268,7 @@ class Spyc {
     if (is_array($array)) {
       $string = '';
       $previous_key = -1;
-      $is_sequence = self::isSequence($array);
+      $is_sequence = self::isList($array);
       foreach ($array as $key => $value) {
         if (!isset($first_key)) $first_key = $key;
         $string .= $this->_yamlize($key, $value, $indent, $previous_key, $first_key, $array, $is_sequence);
@@ -319,7 +319,7 @@ class Spyc {
 
     //if (is_int($key) && $key - 1 == $previous_key && $first_key===0) {
     if (null === $is_sequence) {
-      $is_sequence = is_array ($source_array) && self::isSequence($source_array);
+      $is_sequence = is_array ($source_array) && self::isList($source_array);
     }
     if ($is_sequence) {
       // It's a sequence
@@ -342,8 +342,11 @@ class Spyc {
      * @return bool
      * @param $array The array to check
      */
-  private static function isSequence($array) {
-    return array_keys($array) === range(0, count($array) - 1);
+  private static function isList($array) {
+    if (function_exists('array_is_list')) {
+      return array_is_list($array);
+    }
+    return array() === $array || array_keys($array) === range(0, count($array) - 1);
   }
 
   /**
