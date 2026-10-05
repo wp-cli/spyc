@@ -16,6 +16,16 @@ class DumpTest extends PHPUnit_Framework_TestCase {
       $this->assertEquals ($awaiting, $dump);
     }
 
+    public function testDumpLargeSequenceOfMappings() {
+      $rows = array();
+      $awaiting = "---\n";
+      for ($i = 0; $i < 1000; $i++) {
+        $rows[] = array ('ID' => $i, 'post_title' => "Post $i");
+        $awaiting .= "- \n  ID: $i\n  post_title: Post $i\n";
+      }
+      $this->assertEquals ($awaiting, Spyc::YAMLDump($rows));
+    }
+
     public function testDump() {
       foreach ($this->files_to_test as $file) {
         $yaml = spyc_load(file_get_contents($file));

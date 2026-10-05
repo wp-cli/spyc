@@ -218,9 +218,10 @@ class Spyc {
     if ($array !== null && $array !== '' && (!is_array($array) || count($array) > 0)) {
       $array = (array)$array;
       $previous_key = -1;
+      $is_sequence = self::isSequence($array);
       foreach ($array as $key => $value) {
         if (!isset($first_key)) $first_key = $key;
-        $string .= $this->_yamlize($key,$value,0,$previous_key, $first_key, $array);
+        $string .= $this->_yamlize($key,$value,0,$previous_key, $first_key, $array, $is_sequence);
         $previous_key = $key;
       }
     }
@@ -235,23 +236,23 @@ class Spyc {
      * @param $value The value of the item
      * @param $indent The indent of the current node
      */
-  private function _yamlize($key,$value,$indent, $previous_key = -1, $first_key = 0, $source_array = null) {
+  private function _yamlize($key,$value,$indent, $previous_key = -1, $first_key = 0, $source_array = null, $is_sequence = null) {
     if(is_object($value)) $value = (array)$value;
     if (is_array($value)) {
       // Since $value is already an array, empty($value) and count($value) === 0 are equivalent.
       // We use count($value) === 0 here for explicitness and consistency with the logic in dump().
       if (count($value) === 0)
-        return $this->_dumpNode($key, array(), $indent, $previous_key, $first_key, $source_array);
+        return $this->_dumpNode($key, array(), $indent, $previous_key, $first_key, $source_array, $is_sequence);
       // It has children.  What to do?
       // Make it the right kind of item
-      $string = $this->_dumpNode($key, self::REMPTY, $indent, $previous_key, $first_key, $source_array);
+      $string = $this->_dumpNode($key, self::REMPTY, $indent, $previous_key, $first_key, $source_array, $is_sequence);
       // Add the indent
       $indent += $this->_dumpIndent;
       // Yamlize the array
       $string .= $this->_yamlizeArray($value,$indent);
     } elseif (!is_array($value)) {
       // It doesn't have children.  Yip.
-      $string = $this->_dumpNode($key, $value, $indent, $previous_key, $first_key, $source_array);
+      $string = $this->_dumpNode($key, $value, $indent, $previous_key, $first_key, $source_array, $is_sequence);
     }
     return $string;
   }
@@ -267,9 +268,10 @@ class Spyc {
     if (is_array($array)) {
       $string = '';
       $previous_key = -1;
+      $is_sequence = self::isSequence($array);
       foreach ($array as $key => $value) {
         if (!isset($first_key)) $first_key = $key;
-        $string .= $this->_yamlize($key, $value, $indent, $previous_key, $first_key, $array);
+        $string .= $this->_yamlize($key, $value, $indent, $previous_key, $first_key, $array, $is_sequence);
         $previous_key = $key;
       }
       return $string;
@@ -286,7 +288,7 @@ class Spyc {
      * @param $value The value of the item
      * @param $indent The indent of the current node
      */
-  private function _dumpNode($key, $value, $indent, $previous_key = -1, $first_key = 0, $source_array = null) {
+  private function _dumpNode($key, $value, $indent, $previous_key = -1, $first_key = 0, $source_array = null, $is_sequence = null) {
     // do some folding here, for blocks
     if (is_string ($value) && ((strpos($value,"\n") !== false || strpos($value,": ") !== false || strpos($value,"- ") !== false ||
       strpos($value,"*") !== false || strpos($value,"#") !== false || strpos($value,"<") !== false || strpos($value,">") !== false || strpos ($value, '%') !== false || strpos ($value, '  ') !== false ||
@@ -316,7 +318,10 @@ class Spyc {
     $spaces = str_repeat(' ',$indent);
 
     //if (is_int($key) && $key - 1 == $previous_key && $first_key===0) {
-    if (is_array ($source_array) && array_keys($source_array) === range(0, count($source_array) - 1)) {
+    if (null === $is_sequence) {
+      $is_sequence = is_array ($source_array) && self::isSequence($source_array);
+    }
+    if ($is_sequence) {
       // It's a sequence
       $string = $spaces.'- '.$value."\n";
     } else {
@@ -326,6 +331,19 @@ class Spyc {
       $string = rtrim ($spaces.$key.': '.$value)."\n";
     }
     return $string;
+  }
+
+  /**
+     * Whether an array is a list with keys 0..n-1, which is dumped as a YAML sequence.
+     *
+     * Callers compute this once per array: checking it for every item made dumping
+     * a list quadratic in its length.
+     * @access private
+     * @return bool
+     * @param $array The array to check
+     */
+  private static function isSequence($array) {
+    return array_keys($array) === range(0, count($array) - 1);
   }
 
   /**
